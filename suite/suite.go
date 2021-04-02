@@ -2,18 +2,19 @@ package suite
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"log"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/skudasov/linke2e/abi_build/consumer"
+	"github.com/skudasov/linke2e/contracts_go_build/build/mockoracle"
 	"github.com/skudasov/linke2e/suite/contracts_client"
 	"github.com/skudasov/linke2e/suite/node_client"
 )
@@ -35,6 +36,10 @@ func NewChainLinkSuite(cfg *SuiteConfig) *ChainLinkSuite {
 // Prepare sets all required conditions, fund Chainlink node with eth/link, authorize in node API
 func (m *ChainLinkSuite) Prepare() {
 	m.NodeClient.Authorize()
+	if m.Contracts.Cfg.NetworkType == contracts_client.GethNetwork {
+		m.Contracts.GenerateAddresses(10)
+		m.Contracts.DeployContracts()
+	}
 	m.FundNodeWithEth()
 }
 
@@ -66,23 +71,17 @@ func (m *ChainLinkSuite) GetNodeEthAddr() string {
 	return ethAddr
 }
 
-func (m *ChainLinkSuite) LogListener(contractAddr string) {
-	contractAddress := common.HexToAddress(contractAddr)
-
-	query := ethereum.FilterQuery{
-		Addresses: []common.Address{contractAddress},
-	}
-
+func (m *ChainLinkSuite) LogListener() {
 	var ch = make(chan types.Log)
 	ctx := context.Background()
 
-	sub, err := m.Contracts.EthClient.SubscribeFilterLogs(ctx, query, ch)
+	sub, err := m.Contracts.EthClient.SubscribeFilterLogs(ctx, ethereum.FilterQuery{}, ch)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tokenAbi, err := abi.JSON(strings.NewReader(consumer.APIConsumerABI))
+	tokenAbi, err := abi.JSON(strings.NewReader(mockoracle.MockOracleABI))
 
 	if err != nil {
 		log.Fatal(err)
@@ -99,7 +98,7 @@ func (m *ChainLinkSuite) LogListener(contractAddr string) {
 				Value *big.Int
 			}
 
-			err = tokenAbi.UnpackIntoInterface(&transferEvent, "Transfer", eventLog.Data)
+			err = tokenAbi.UnpackIntoInterface(&transferEvent, "MockOracle", eventLog.Data)
 
 			if err != nil {
 				log.Println("Failed to unpack")
@@ -116,9 +115,22 @@ func (m *ChainLinkSuite) LogListener(contractAddr string) {
 	}
 }
 
+func (m *ChainLinkSuite) GetRootInfo() (rootAddr common.Address, rootPrivateKey *ecdsa.PrivateKey) {
+	if m.Contracts.Cfg.NetworkType == contracts_client.HardhatNetwork {
+		rootAddr = m.Contracts.HardhatDeployerData.PublicKeyAddress
+		rootPrivateKey = m.Contracts.HardhatDeployerData.PrivateKey
+	} else {
+		k := m.Contracts.GethRootAccount()
+		rootAddr = k.Address
+		rootPrivateKey = k.PrivateKey
+	}
+	return
+}
+
 func (m *ChainLinkSuite) FundNodeWithEth() {
-	ethAddr := m.GetNodeEthAddr()
-	nonce, err := m.Contracts.EthClient.PendingNonceAt(context.Background(), m.Contracts.DeployerData.PublicKeyAddress)
+	rootAddr, rootPrivateKey := m.GetRootInfo()
+	nodeAddr := m.GetNodeEthAddr()
+	nonce, err := m.Contracts.EthClient.PendingNonceAt(context.Background(), rootAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -131,9 +143,9 @@ func (m *ChainLinkSuite) FundNodeWithEth() {
 		log.Fatal(err)
 	}
 	var data []byte
-	tx := types.NewTransaction(nonce, common.HexToAddress(ethAddr), big.NewInt(1000000000000000000), uint64(300000), gasPrice, data)
+	tx := types.NewTransaction(nonce, common.HexToAddress(nodeAddr), big.NewInt(1000000000000000000), uint64(300000), gasPrice, data)
 
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), m.Contracts.DeployerData.PrivateKey)
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), rootPrivateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -152,33 +164,23 @@ func (m *ChainLinkSuite) GetLastBlock() uint64 {
 	return blockNum
 }
 
-func (m *ChainLinkSuite) APIConsumerTest(oracleAddr string, jobID string, url string, times int) {
-	nonce, err := m.Contracts.EthClient.PendingNonceAt(context.Background(), m.Contracts.DeployerData.PublicKeyAddress)
+func (m *ChainLinkSuite) APIConsumerTest(jobID string, url string, times int) {
+	rootAddr, rootPrivateKey := m.GetRootInfo()
+	transactor := m.Contracts.DeployerTransactor(rootAddr, rootPrivateKey)
+	instance, err := consumer.NewAPIConsumer(m.Contracts.GethDeployedContracts.APIConsumerAddress, m.Contracts.EthClient)
 	if err != nil {
 		log.Fatal(err)
 	}
-	gasPrice, err := m.Contracts.EthClient.SuggestGasPrice(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-	instance, err := consumer.NewAPIConsumer(m.Contracts.ApiConsumerAddr, m.Contracts.EthClient)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	auth := bind.NewKeyedTransactor(m.Contracts.DeployerData.PrivateKey)
-	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)
-	auth.GasPrice = gasPrice
-	auth.GasLimit = uint64(300000)
 
 	var jobIDToSend [32]byte
 	log.Printf("job id hex: %s", hexutil.Encode([]byte(jobID)))
 	copy(jobIDToSend[:], jobID)
 
+	log.Printf("creating tx to mock oracle: %s", m.Contracts.GethDeployedContracts.MockOracleAddress.Hex())
 	res, err := instance.CreateRequestTo(
-		auth,
-		common.HexToAddress(oracleAddr),
+		transactor,
+		m.Contracts.GethDeployedContracts.MockOracleAddress,
+		// m.Contracts.HardhatDeployerData.MockOracleAddress,
 		jobIDToSend,
 		big.NewInt(1000000000000000000),
 		url,

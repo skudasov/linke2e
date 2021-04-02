@@ -1,6 +1,6 @@
 node_modules
 
-#Hardhat files
+#Hardhat ethconfig
 cache
 artifacts
 

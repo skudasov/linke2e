@@ -1,0 +1,78 @@
+version: "2"
+
+services:
+  ethereum:
+    image: ethereum/client-go:v1.10.1
+#    env_file:
+#      - geth.env
+    restart: always
+    networks:
+      - dockernet
+    volumes:
+      - ./ethconfig/password:/root/ethconfig/password:ro
+      - ./ethconfig/genesis.json:/root/ethconfig/genesis.json:ro
+      - ./ethconfig/init.sh:/root/init.sh:rw
+      - ./ethconfig/keystore:/root/.ethereum/devchain/keystore:rw
+      - ./geth.env:/root/geth.env:rw
+    ports:
+      - "30303:30303"
+      - "30303:30303/udp"
+      - "8546:8546"
+      - "8545:8545"
+    entrypoint: sh ./root/init.sh
+    command: |
+      --networkid=5777
+      --mine
+      --miner.threads 1
+      --miner.etherbase 0x007ccffb7916f37f7aeef05e8096ecfbe55afc2f
+      --rpcapi="db,eth,net,web3,personal,web3"
+      --ipcdisable
+      --http
+      --http.addr 0.0.0.0
+      --http.port=8544
+      --ws
+      --ws.origins "*"
+      --ws.addr 0.0.0.0
+      --ws.port=8545
+      --allow-insecure-unlock
+      --rpc.allow-unprotected-txs
+
+  pg:
+    image: postgres:13.0
+    restart: always
+    networks:
+      - dockernet
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=chainlink
+    ports:
+      - "5432:5432"
+    command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all -c max_connections=500 -c shared_buffers=4GB
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  chainlink:
+    build: "chainlink"
+    env_file:
+      - chainlink.geth.env
+    restart: always
+    networks:
+      - dockernet
+    ports:
+      - "5100:5100"
+      - "6688:6688"
+    links:
+      - "ethereum"
+      - "pg"
+    depends_on:
+      pg:
+        condition: service_healthy
+    volumes:
+      - .:/host
+
+networks:
+  dockernet:

@@ -12,7 +12,7 @@ for (const tsk of tasks) { tsk() }
 
 let mnemonic = process.env.MNEMONIC
 if (!mnemonic) {
-  // FOR DEV ONLY, SET IT IN .env files if you want to keep it private
+  // FOR DEV ONLY, SET IT IN .env ethconfig if you want to keep it private
   // (IT IS IMPORTANT TO HAVE A NON RANDOM MNEMONIC SO THAT SCRIPTS CAN ACT ON THE SAME ACCOUNTS)
   mnemonic = 'test test test test test test test test test test test junk'
 }
@@ -32,21 +32,19 @@ const config = {
       {
         version: "0.6.6",
       },
-      {
-        version: "0.6.6",
-      },
     ]
   },
   defaultNetwork: 'localhost',
   networks: {
+    hardhat: {
+      loggingEnabled: true,
+      mining: {
+        // auto: false,
+        // interval: 5000
+      },
+    },
     localhost: {
       url: "http://0.0.0.0:8545",
-      /*
-        notice no mnemonic here? it will just use account 0 of the hardhat node to deploy
-        (you can put in a mnemonic here to set the deployer locally)
-      */
-      // auto: false,
-      // interval: 5000,
       accounts: { mnemonic }
     },
     rinkeby: {
