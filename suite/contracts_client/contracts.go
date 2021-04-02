@@ -35,7 +35,6 @@ type GethDeployedContracts struct {
 // ContractsInteractor wraps interactions with contracts for both hardhat and geth
 type ContractsInteractor struct {
 	Cfg       *ContractsConfig
-	manifest  map[string]interface{}
 	EthClient *ethclient.Client
 
 	// geth deps

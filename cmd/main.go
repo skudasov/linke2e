@@ -16,7 +16,7 @@ func main() {
 			Password: "twochains",
 		},
 		ContractsConfig: &contracts_client.ContractsConfig{
-			NetworkType: contracts_client.GethNetwork,
+			NetworkType: contracts_client.HardhatNetwork,
 			RPCUrl:      "ws://localhost:8545",
 			NetworkID:   "31337",
 			// hardhat
@@ -32,8 +32,8 @@ func main() {
 			{
 				Type: "runlog",
 				Params: map[string]string{
-					"address": h.Contracts.GethDeployedContracts.MockOracleAddress.Hex(),
-					// "address": h.Contracts.HardhatDeployerData.MockOracleAddress.String(),
+					// "address": h.Contracts.GethDeployedContracts.MockOracleAddress.Hex(),
+					"address": h.Contracts.HardhatDeployerData.MockOracleAddress.String(),
 				},
 			},
 		},

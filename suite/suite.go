@@ -167,7 +167,7 @@ func (m *ChainLinkSuite) GetLastBlock() uint64 {
 func (m *ChainLinkSuite) APIConsumerTest(jobID string, url string, times int) {
 	rootAddr, rootPrivateKey := m.GetRootInfo()
 	transactor := m.Contracts.DeployerTransactor(rootAddr, rootPrivateKey)
-	instance, err := consumer.NewAPIConsumer(m.Contracts.GethDeployedContracts.APIConsumerAddress, m.Contracts.EthClient)
+	instance, err := consumer.NewAPIConsumer(m.Contracts.HardhatDeployerData.APIConsumerAddress, m.Contracts.EthClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -176,11 +176,11 @@ func (m *ChainLinkSuite) APIConsumerTest(jobID string, url string, times int) {
 	log.Printf("job id hex: %s", hexutil.Encode([]byte(jobID)))
 	copy(jobIDToSend[:], jobID)
 
-	log.Printf("creating tx to mock oracle: %s", m.Contracts.GethDeployedContracts.MockOracleAddress.Hex())
+	log.Printf("creating tx to mock oracle: %s", m.Contracts.HardhatDeployerData.MockOracleAddress.Hex())
 	res, err := instance.CreateRequestTo(
 		transactor,
-		m.Contracts.GethDeployedContracts.MockOracleAddress,
-		// m.Contracts.HardhatDeployerData.MockOracleAddress,
+		// m.Contracts.GethDeployedContracts.MockOracleAddress,
+		m.Contracts.HardhatDeployerData.MockOracleAddress,
 		jobIDToSend,
 		big.NewInt(1000000000000000000),
 		url,
