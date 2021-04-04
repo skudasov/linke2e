@@ -4,12 +4,18 @@
     "homesteadBlock": 0,
     "eip150Block": 0,
     "eip155Block": 0,
-    "eip158Block": 0
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "clique": {
+      "period": 2,
+      "epoch": 10
+    }
   },
   "nonce": "0x0000000000000042",
   "mixhash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "difficulty": "1",
   "coinbase": "0x3333333333333333333333333333333333333333",
+  "timestamp": "0x0",
   "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "extraData": "0x",
   "gasLimit": "0x3B9AC9FF",

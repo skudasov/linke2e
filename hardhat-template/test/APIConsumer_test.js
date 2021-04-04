@@ -20,7 +20,7 @@ describe("APIConsumer", async function () {
   })
   it("Random Number Should successfully make an external API request", async () => {
     //Before we can do an API request, we need to fund it with LINK
-    await hre.run("fund-link", { contract: randomNumberConsumer.address, linkAddress: link.address })
+    // await hre.run("fund-link", { contract: randomNumberConsumer.address, linkAddress: link.address })
     await link.transfer(apiConsumer.address, '2000000000000000000')
     let transaction = await apiConsumer.createRequestTo(mockOracle.address, jobId, fee, url, path, times)
     let tx_receipt = await transaction.wait()

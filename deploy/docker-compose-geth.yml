@@ -17,14 +17,15 @@ services:
     ports:
       - "30303:30303"
       - "30303:30303/udp"
-      - "8546:8546"
+      - "8544:8544"
       - "8545:8545"
+      - "8546:8546"
     entrypoint: sh ./root/init.sh
     command: |
-      --networkid=5777
+      --networkid=31337
       --mine
       --miner.threads 1
-      --miner.etherbase 0x007ccffb7916f37f7aeef05e8096ecfbe55afc2f
+      --miner.etherbase 0x01bca4c976169d4d8cceb227c08bab9e3775d7f5
       --rpcapi="db,eth,net,web3,personal,web3"
       --ipcdisable
       --http

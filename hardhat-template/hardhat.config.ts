@@ -42,6 +42,12 @@ const config = {
         // auto: false,
         // interval: 5000
       },
+      accounts: [
+        {
+          privateKey: "88b1ae324c09b52d8710bbe4c4f0b63f591e5eea508176a97d7f76b154f979b1",
+          balance: "2000000000000000000000",
+        }
+      ]
     },
     localhost: {
       url: "http://0.0.0.0:8545",

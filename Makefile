@@ -41,6 +41,10 @@ start_hardhat:
 stop_hardhat:
 	cd deploy && docker-compose -f docker-compose-hardhat.yml down --remove-orphans
 
+.PHONY: test_interactions
+test_interactions:
+	go test -v --count=1 tests/all_test.go
+
 .PHONY: build_contracts
 build_contracts:
 	./build_contracts_docker.sh

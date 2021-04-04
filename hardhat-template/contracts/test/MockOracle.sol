@@ -15,7 +15,7 @@ contract MockOracle is ChainlinkRequestInterface, LinkTokenReceiver {
   using SafeMathChainlink for uint256;
 
   uint256 constant public EXPIRY_TIME = 20 minutes;
-  uint256 constant private MINIMUM_CONSUMER_GAS_LIMIT = 400000;
+  uint256 constant private MINIMUM_CONSUMER_GAS_LIMIT = 30000;
   
   struct Request {
       address callbackAddr;
@@ -103,6 +103,7 @@ contract MockOracle is ChainlinkRequestInterface, LinkTokenReceiver {
       expiration,
       _dataVersion,
       _data);
+    console.log("event emitted");
   }
 
   /**

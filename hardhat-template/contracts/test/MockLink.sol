@@ -24,6 +24,9 @@ contract MockLink is ERC20 {
     {
         console.log("link transfer triggered");
         super.transfer(_to, _value);
+        console.log("from: ", msg.sender);
+        console.log("to: ", _to);
+        console.log("value: ", _value);
         emit Transfer(msg.sender, _to, _value, _data);
         if (isContract(_to)) {
             contractFallback(_to, _value, _data);
@@ -46,5 +49,6 @@ contract MockLink is ERC20 {
     {
         ERC677Receiver receiver = ERC677Receiver(_to);
         receiver.onTokenTransfer(msg.sender, _value, _data);
+        console.log("after callback");
     }
 }

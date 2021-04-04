@@ -1,5 +1,7 @@
 ##### Chainlink node e2e tests
 
+#### Development
+
 Setup deps
 ```
 go mod download
@@ -18,4 +20,13 @@ make stop_hardhat
 Run golang lint
 ```
 make lint
+```
+Rebuild contracts (golang deployment)
+```
+./build_contracts_docker.sh
+```
+
+Run tests
+```
+make test_interactions
 ```

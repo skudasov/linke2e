@@ -3,27 +3,26 @@ package contracts_client
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"io/ioutil"
 	"log"
 	"math/big"
-	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"github.com/skudasov/linke2e/abi_build/consumer"
 	"github.com/skudasov/linke2e/contracts_go_build/build/apiconsumer"
 	"github.com/skudasov/linke2e/contracts_go_build/build/mocklink"
 	"github.com/skudasov/linke2e/contracts_go_build/build/mockoracle"
-	"github.com/skudasov/linke2e/suite/deployer"
 )
 
-// GethDeployedContracts provides data and stubs of deployed contracts on geth
-type GethDeployedContracts struct {
+// DeployedData provides data and stubs of deployed contracts
+type DeployedData struct {
+	RootAddress        common.Address
+	RootPrivateKey     *ecdsa.PrivateKey
 	MockLinkAddress    common.Address
 	MockLink           *mocklink.MockLink
 	MockOracleAddress  common.Address
@@ -34,15 +33,9 @@ type GethDeployedContracts struct {
 
 // ContractsInteractor wraps interactions with contracts for both hardhat and geth
 type ContractsInteractor struct {
-	Cfg       *ContractsConfig
-	EthClient *ethclient.Client
-
-	// geth deps
-	GethDeployedContracts *GethDeployedContracts
-
-	// hardhat deps
-	ApiConsumerAddr     common.Address
-	HardhatDeployerData *deployer.HardhatDeployerData
+	Cfg          *ContractsConfig
+	EthClient    *ethclient.Client
+	DeployedData *DeployedData
 }
 
 // NewContracts setups client connection with blockchain network
@@ -55,14 +48,11 @@ func NewContracts(cfg *ContractsConfig) *ContractsInteractor {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if cfg.NetworkType == HardhatNetwork {
-		c.HardhatDeployerData = deployer.NewHardhatDeployerData(cfg.HardhatPrivateKeyHex)
-	}
 	return c
 }
 
-// GethRootAccount loads geth root account info
-func (m *ContractsInteractor) GethRootAccount() *keystore.Key {
+// RootAccountFromFile loads geth root account info
+func (m *ContractsInteractor) RootAccountFromFile() *keystore.Key {
 	jsonBytes, err := ioutil.ReadFile(m.Cfg.GethRootAccountFile)
 	if err != nil {
 		log.Fatal(err)
@@ -85,9 +75,9 @@ func (m *ContractsInteractor) GethRootAccount() *keystore.Key {
 
 // GenerateAddresses helper method to list generated addresses order
 func (m *ContractsInteractor) GenerateAddresses(amount int) {
-	key := m.GethRootAccount()
-	for i := 0; i < 5; i++ {
-		log.Printf("address #%d: %s\n", i, crypto.CreateAddress(key.Address, uint64(amount)).String())
+	key := m.RootAccountFromFile()
+	for i := 0; i < amount; i++ {
+		log.Printf("address #%d: %s\n", i, crypto.CreateAddress(key.Address, uint64(i)).String())
 	}
 }
 
@@ -109,8 +99,25 @@ func (m *ContractsInteractor) DeployerTransactor(rootAddr common.Address, rootPr
 	return tx
 }
 
+func (m *ContractsInteractor) HardhatDeployerData() {
+	privateKey, err := crypto.HexToECDSA(m.Cfg.HardhatPrivateKeyHex)
+	if err != nil {
+		log.Fatal(err)
+	}
+	m.DeployedData = &DeployedData{
+		RootAddress:        common.HexToAddress("0x0757f2f2b672454d44a0a435aef0718f8528414f"),
+		RootPrivateKey:     privateKey,
+		MockLinkAddress:    common.HexToAddress("0xc5F64761A05aef6277bCCEf13B926df361ca56e8"),
+		MockLink:           nil,
+		MockOracleAddress:  common.HexToAddress("0x451B877E675e86b72da1525C2932fC5B4213f581"),
+		MockOracle:         nil,
+		APIConsumerAddress: common.HexToAddress("0xaC3dE07f7F44C0D722f1806d9159c494bAfa2145"),
+		APIConsumer:        nil,
+	}
+}
+
 func (m *ContractsInteractor) DeployContracts() {
-	k := m.GethRootAccount()
+	k := m.RootAccountFromFile()
 	linkAddr, linkTx, mockLinkInstance, err := mocklink.DeployMockLink(
 		m.DeployerTransactor(k.Address, k.PrivateKey),
 		m.EthClient,
@@ -145,7 +152,9 @@ func (m *ContractsInteractor) DeployContracts() {
 	log.Printf("api consumer deployed")
 	log.Println(apiAddr.Hex())
 	log.Println(apiTx.Hash().Hex())
-	m.GethDeployedContracts = &GethDeployedContracts{
+	m.DeployedData = &DeployedData{
+		RootAddress:        k.Address,
+		RootPrivateKey:     k.PrivateKey,
 		MockLinkAddress:    linkAddr,
 		MockLink:           mockLinkInstance,
 		MockOracleAddress:  oracleAddr,
@@ -155,27 +164,41 @@ func (m *ContractsInteractor) DeployContracts() {
 	}
 }
 
-func (m *ContractsInteractor) APIConsumerTest() {
-	instance, err := consumer.NewAPIConsumer(m.ApiConsumerAddr, m.EthClient)
+// FundConsumerWithLink fund consumer contract with link, used only with geth deployment
+func (m *ContractsInteractor) FundConsumerWithLink() {
+	log.Printf("funding consumer with link")
+	k := m.RootAccountFromFile()
+	tx := m.DeployerTransactor(k.Address, k.PrivateKey)
+	_, err := m.DeployedData.MockLink.Transfer(tx, m.DeployedData.APIConsumerAddress, big.NewInt(2000000000000000000))
 	if err != nil {
 		log.Fatal(err)
 	}
-	res, err := instance.Owner(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("res: %s", res)
 }
 
-func (m *ContractsInteractor) GetManifest() map[string]interface{} {
-	f, err := os.Open(m.Cfg.HardhatManifestFile)
+// FundNodeWithEth fund node with eth
+func (m *ContractsInteractor) FundNodeWithEth(nodeAddr string) {
+	nonce, err := m.EthClient.PendingNonceAt(context.Background(), m.DeployedData.RootAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
-	manifest, _ := ioutil.ReadAll(f)
-	var manifestMap map[string]interface{}
-	if err := json.Unmarshal(manifest, &manifestMap); err != nil {
+	gasPrice, err := m.EthClient.SuggestGasPrice(context.Background())
+	if err != nil {
 		log.Fatal(err)
 	}
-	return manifestMap
+	chainID, err := m.EthClient.NetworkID(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	var data []byte
+	tx := types.NewTransaction(nonce, common.HexToAddress(nodeAddr), big.NewInt(1000000000000000000), uint64(300000), gasPrice, data)
+
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), m.DeployedData.RootPrivateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = m.EthClient.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("fund chainlink node tx hash: %s", signedTx.Hash().Hex())
 }

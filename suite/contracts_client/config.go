@@ -6,15 +6,10 @@ const (
 )
 
 type ContractsConfig struct {
-	RPCUrl      string
-	NetworkID   string
-	NetworkType int
-
-	// hardhat
-	HardhatManifestFile  string
+	RPCUrl               string
+	NetworkID            string
+	NetworkType          int
 	HardhatPrivateKeyHex string
-
-	// geth
-	GethRootAccountFile string
-	GethRootPassword    string
+	GethRootAccountFile  string
+	GethRootPassword     string
 }
