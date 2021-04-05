@@ -1,18 +1,33 @@
 ## Chainlink node e2e tests
 
+### Quickstart
+Install deps, yarn is required
+```
+make install-deps
+```
+Start default geth development network
+```
+make start_geth
+```
+Run tests
+```
+make test_interactions
+```
+
 ### Development (only OSX for now)
 
 Setup deps
 ```
-go mod download
-cd hardhat-template
-yarn install
+make install-deps
 ```
 
-Start envs
+Start envs (hardhat is WIP for now)
 ```
 make start_geth
 make stop_geth
+
+make start_hardhat
+make stop_hardhat
 ```
 
 Run golang lint

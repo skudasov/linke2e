@@ -12,10 +12,14 @@ lint: golangci
 golangci: ## install golangci-linter
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${BIN_DIR} v1.27.0
 
+.PHONY: build-deps
+build-deps:
+	go mod download && cd hardhat-template && yarn install
+
 go-acc:
 	go get github.com/ory/go-acc@v0.2.3
 
-install-deps: golangci go-acc
+install-deps: golangci go-acc build-deps
 
 .PHONY: test
 test:
