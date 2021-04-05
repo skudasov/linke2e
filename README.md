@@ -1,7 +1,9 @@
 ## Chainlink node e2e tests
 
 ### Quickstart
-Install deps, yarn is required
+Install deps, [yarn](https://classic.yarnpkg.com/en/docs/install/#mac-stable), [docker-compose](https://docs.docker.com/compose/install/) is required
+
+Tested on compose version: 1.21.0, build 5920eb0
 ```
 make install-deps
 ```
@@ -18,6 +20,11 @@ Check UI results
 ```
 http://localhost:6688
 ```
+
+Login: notreal@fakeemail.ch
+
+Password: twochains
+
 
 ### Development (only OSX for now)
 
@@ -60,7 +67,7 @@ Check your DNS from inside
 ```
 docker run --rm alpine nslookup host.docker.internal
 ```
-Use default Docker Engine config, without additional dns
+Use default Docker Engine config, without additional dns or at least include default
 ```
 {
   "debug": true,
