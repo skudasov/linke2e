@@ -10,13 +10,14 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"github.com/skudasov/linke2e/contracts_go_build/build/apiconsumer"
-	"github.com/skudasov/linke2e/contracts_go_build/build/mocklink"
-	"github.com/skudasov/linke2e/contracts_go_build/build/mockoracle"
+	"github.com/skudasov/linke2e/contracts_go_build/build/APIConsumer"
+	"github.com/skudasov/linke2e/contracts_go_build/build/MockLink"
+	"github.com/skudasov/linke2e/contracts_go_build/build/MockOracle"
 )
 
 // DeployedData provides data and stubs of deployed contracts
@@ -24,11 +25,11 @@ type DeployedData struct {
 	RootAddress        common.Address
 	RootPrivateKey     *ecdsa.PrivateKey
 	MockLinkAddress    common.Address
-	MockLink           *mocklink.MockLink
+	MockLink           *MockLink.MockLink
 	MockOracleAddress  common.Address
-	MockOracle         *mockoracle.MockOracle
+	MockOracle         *MockOracle.MockOracle
 	APIConsumerAddress common.Address
-	APIConsumer        *apiconsumer.APIConsumer
+	APIConsumer        *APIConsumer.APIConsumer
 }
 
 // ContractsInteractor wraps interactions with contracts for both hardhat and geth
@@ -61,15 +62,6 @@ func (m *ContractsInteractor) RootAccountFromFile() *keystore.Key {
 	if err != nil {
 		log.Fatal(err)
 	}
-	bn, err := m.EthClient.BlockNumber(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-	balance, err := m.EthClient.BalanceAt(context.Background(), k.Address, big.NewInt(int64(bn)))
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("balance of root: %d, addr: %s", balance, k.Address.String())
 	return k
 }
 
@@ -81,7 +73,7 @@ func (m *ContractsInteractor) ShowAddresses(amount int) {
 	}
 }
 
-// DeployerTransactor creates default root account signer opts
+// DeployerTransactor creates default root account signer opts with a new nonce
 func (m *ContractsInteractor) DeployerTransactor(rootAddr common.Address, rootPrivateKey *ecdsa.PrivateKey) *bind.TransactOpts {
 	nonce, err := m.EthClient.PendingNonceAt(context.Background(), rootAddr)
 	if err != nil {
@@ -118,7 +110,8 @@ func (m *ContractsInteractor) HardhatDeployerData() {
 
 func (m *ContractsInteractor) DeployContracts() {
 	k := m.RootAccountFromFile()
-	linkAddr, linkTx, mockLinkInstance, err := mocklink.DeployMockLink(
+	m.PrintRootBalace(k)
+	linkAddr, linkTx, mockLinkInstance, err := MockLink.DeployMockLink(
 		m.DeployerTransactor(k.Address, k.PrivateKey),
 		m.EthClient,
 	)
@@ -129,7 +122,7 @@ func (m *ContractsInteractor) DeployContracts() {
 	log.Println(linkAddr.Hex())
 	log.Println(linkTx.Hash().Hex())
 
-	oracleAddr, oracleTx, mockOracleInstance, err := mockoracle.DeployMockOracle(
+	oracleAddr, oracleTx, mockOracleInstance, err := MockOracle.DeployMockOracle(
 		m.DeployerTransactor(k.Address, k.PrivateKey),
 		m.EthClient,
 		linkAddr,
@@ -141,7 +134,7 @@ func (m *ContractsInteractor) DeployContracts() {
 	log.Println(oracleAddr.Hex())
 	log.Println(oracleTx.Hash().Hex())
 
-	apiAddr, apiTx, apiConsumerInstance, err := apiconsumer.DeployAPIConsumer(
+	apiAddr, apiTx, apiConsumerInstance, err := APIConsumer.DeployAPIConsumer(
 		m.DeployerTransactor(k.Address, k.PrivateKey),
 		m.EthClient,
 		linkAddr,
@@ -201,6 +194,31 @@ func (m *ContractsInteractor) FundNodeWithEth(nodeAddr string) {
 		log.Fatal(err)
 	}
 	log.Printf("fund chainlink node tx hash: %s", signedTx.Hash().Hex())
+}
+
+func (m *ContractsInteractor) APIConsumerRequest(jobID string, url string, path string, times int) {
+	var jobIDToSend [32]byte
+	copy(jobIDToSend[:], jobID)
+	log.Printf("job id hex: %s", hexutil.Encode([]byte(jobID)))
+
+	log.Printf("calling APIConsumer.createRequestTo with oracle addr: %s", m.DeployedData.MockOracleAddress.Hex())
+	res, err := m.DeployedData.APIConsumer.CreateRequestTo(
+		m.DeployerTransactor(m.DeployedData.RootAddress, m.DeployedData.RootPrivateKey),
+		m.DeployedData.MockOracleAddress,
+		jobIDToSend,
+		big.NewInt(10000000000000000),
+		url,
+		path,
+		big.NewInt(int64(times)),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	jsonPayload, err := res.MarshalJSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("receipt: %s", jsonPayload)
 }
 
 func (m *ContractsInteractor) CheckAPIConsumerData() int64 {
