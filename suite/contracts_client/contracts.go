@@ -33,13 +33,13 @@ type DeployedData struct {
 
 // ContractsInteractor wraps interactions with contracts for both hardhat and geth
 type ContractsInteractor struct {
-	Cfg          *ContractsConfig
+	Cfg          *Config
 	EthClient    *ethclient.Client
 	DeployedData *DeployedData
 }
 
 // NewContracts setups client connection with blockchain network
-func NewContracts(cfg *ContractsConfig) *ContractsInteractor {
+func NewContracts(cfg *Config) *ContractsInteractor {
 	c := &ContractsInteractor{
 		Cfg: cfg,
 	}
@@ -73,8 +73,8 @@ func (m *ContractsInteractor) RootAccountFromFile() *keystore.Key {
 	return k
 }
 
-// GenerateAddresses helper method to list generated addresses order
-func (m *ContractsInteractor) GenerateAddresses(amount int) {
+// ShowAddresses helper method to list generated addresses order
+func (m *ContractsInteractor) ShowAddresses(amount int) {
 	key := m.RootAccountFromFile()
 	for i := 0; i < amount; i++ {
 		log.Printf("address #%d: %s\n", i, crypto.CreateAddress(key.Address, uint64(i)).String())
@@ -201,4 +201,12 @@ func (m *ContractsInteractor) FundNodeWithEth(nodeAddr string) {
 		log.Fatal(err)
 	}
 	log.Printf("fund chainlink node tx hash: %s", signedTx.Hash().Hex())
+}
+
+func (m *ContractsInteractor) CheckAPIConsumerData() int64 {
+	data, err := m.DeployedData.APIConsumer.Data(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return data.Int64()
 }

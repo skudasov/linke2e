@@ -1,24 +1,36 @@
 package suite
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"log"
-	"os"
+	"testing"
+	"time"
+
+	"github.com/avast/retry-go"
+	"github.com/pkg/errors"
 
 	"github.com/skudasov/linke2e/suite/contracts_client"
+	"github.com/skudasov/linke2e/suite/mock_api"
 	"github.com/skudasov/linke2e/suite/node_client"
 )
+
+func init() {
+	retry.DefaultAttempts = 10
+	retry.DefaultDelayType = func(n uint, err error, config *retry.Config) time.Duration {
+		return 1 * time.Second
+	}
+}
 
 type ChainLinkSuite struct {
 	Contracts  *contracts_client.ContractsInteractor
 	NodeClient *node_client.NodeClient
+	MockClient *mock_api.Client
 }
 
-func NewChainLinkSuite(cfg *SuiteConfig) *ChainLinkSuite {
+func NewChainLinkSuite(cfg *Config) *ChainLinkSuite {
 	s := &ChainLinkSuite{
 		Contracts:  contracts_client.NewContracts(cfg.ContractsConfig),
 		NodeClient: node_client.NewNodeClient(cfg.NodeClientConfig),
+		MockClient: mock_api.NewClient(cfg.MockClientConfig),
 	}
 	s.Prepare()
 	return s
@@ -27,8 +39,9 @@ func NewChainLinkSuite(cfg *SuiteConfig) *ChainLinkSuite {
 // Prepare sets all required conditions, fund Chainlink node with eth/link, authorize in node API
 func (m *ChainLinkSuite) Prepare() {
 	m.NodeClient.Authorize()
+	go mock_api.Start()
 	if m.Contracts.Cfg.NetworkType == contracts_client.GethNetwork {
-		m.Contracts.GenerateAddresses(10)
+		m.Contracts.ShowAddresses(10)
 		m.Contracts.DeployContracts()
 		m.Contracts.FundConsumerWithLink()
 	} else {
@@ -37,18 +50,47 @@ func (m *ChainLinkSuite) Prepare() {
 	m.Contracts.FundNodeWithEth(m.NodeClient.GetNodeEthAddr())
 }
 
-func (m *ChainLinkSuite) InteractionFromFiles(jobPath string) string {
-	jobFile, err := os.Open(jobPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	byteValue, _ := ioutil.ReadAll(jobFile)
+// CreateSpec creates job from spec file
+func (m *ChainLinkSuite) CreateSpec(jobPath string) map[string]interface{} {
+	fileMap := JSONFileToMap(jobPath)
+	jobID := m.CreateJobSpec(fileMap)
+	fileMap["jobID"] = jobID
+	return fileMap
+}
 
-	var r map[string]interface{}
-	if err := json.Unmarshal(byteValue, &r); err != nil {
-		log.Fatal(err)
+// CreateStub sets stub response from file
+func (m *ChainLinkSuite) CreateStub(stubPath string) map[string]interface{} {
+	fileMap := JSONFileToMap(stubPath)
+	m.MockClient.SetStubResponse(fileMap["response"].(map[string]interface{}))
+	return fileMap
+}
+
+// AwaitExpected awaits common expectations for interaction
+func (m *ChainLinkSuite) AwaitExpected(t *testing.T, jobMap map[string]interface{}, stubMap map[string]interface{}) {
+	if err := retry.Do(func() error {
+		if int(stubMap["times"].(float64)) != m.MockClient.CheckCalledTimes("api_stub") {
+			log.Printf("checking stub was called")
+			return errors.New("retrying awaiting for api_stub calls")
+		}
+		log.Printf("stub called")
+		return nil
+	}); err != nil {
+		log.Printf("stub expectations failed")
+		t.Fail()
 	}
-	return m.CreateJobSpec(r)
+
+	data := stubMap["response"].(map[string]interface{})["data"].(float64)
+	if err := retry.Do(func() error {
+		d := m.Contracts.CheckAPIConsumerData()
+		if d != int64(data) {
+			log.Printf("awaiting for data: %d", d)
+			return errors.New("retrying awaiting for data in contract")
+		}
+		return nil
+	}); err != nil {
+		log.Printf("on-chain data expectations failed")
+		t.Fail()
+	}
 }
 
 func (m *ChainLinkSuite) CreateJobSpec(body map[string]interface{}) string {

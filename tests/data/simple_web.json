@@ -1,10 +1,7 @@
 {
   "initiators": [
     {
-      "type": "runlog",
-      "params": {
-        "address": "0x0000000000000000000000000000000000000000"
-      }
+      "type": "web"
     }
   ],
   "tasks": [
@@ -28,7 +25,9 @@
     },
     {
       "type": "ethtx",
-      "params": {}
+      "params": {
+        "address": "0xBc4ea0504f43a7B743Fd8FF7195f3dCDf8cFEdf5"
+      }
     }
   ]
 }

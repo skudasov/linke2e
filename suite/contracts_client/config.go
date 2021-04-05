@@ -5,7 +5,7 @@ const (
 	GethNetwork
 )
 
-type ContractsConfig struct {
+type Config struct {
 	RPCUrl               string
 	NetworkID            string
 	NetworkType          int

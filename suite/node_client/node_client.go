@@ -8,11 +8,11 @@ import (
 )
 
 type NodeClient struct {
-	Cfg    *NodeClientConfig
+	Cfg    *Config
 	Client *resty.Client
 }
 
-func NewNodeClient(cfg *NodeClientConfig) *NodeClient {
+func NewNodeClient(cfg *Config) *NodeClient {
 	c := resty.New()
 	c.SetHostURL(cfg.Url)
 	if cfg.Debug {
@@ -32,7 +32,7 @@ func (m *NodeClient) Authorize() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("session created: %s", res)
+	log.Printf("session created: %s", res)
 }
 
 func (m *NodeClient) GetNodeEthAddr() string {
@@ -47,4 +47,15 @@ func (m *NodeClient) GetNodeEthAddr() string {
 	log.Printf("node balances response: %s", res)
 	log.Printf("node eth id: %s", ethAddr)
 	return ethAddr
+}
+
+func (m *NodeClient) TriggerJobRun(jobID string) {
+	var respBody map[string]interface{}
+	res, err := m.Client.R().
+		SetResult(&respBody).
+		Post(fmt.Sprintf("/v2/specs/%s/runs", jobID))
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("trigger response for job: %s: %v", jobID, res)
 }

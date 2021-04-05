@@ -16,16 +16,6 @@ services:
     ports:
       - "8545:8545"
 
-#  ganache:
-#    container_name: ganache
-#    networks:
-#      - dockernet
-#    build:
-#      context: ./ganache
-#    ports:
-#      - "8545:8545"
-#      - "8546:8546"
-
   pg:
     image: postgres:13.0
     restart: always

@@ -6,12 +6,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/skudasov/linke2e/abi_build/consumer"
+	"github.com/skudasov/linke2e/contracts_go_build/build/apiconsumer"
 )
 
-func (m *ContractsInteractor) APIConsumerRequest(jobID string, url string, times int) {
+func (m *ContractsInteractor) APIConsumerRequest(jobID string, url string, path string, times int) {
 	transactor := m.DeployerTransactor(m.DeployedData.RootAddress, m.DeployedData.RootPrivateKey)
-	instance, err := consumer.NewAPIConsumer(m.DeployedData.APIConsumerAddress, m.EthClient)
+	instance, err := apiconsumer.NewAPIConsumer(m.DeployedData.APIConsumerAddress, m.EthClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -20,14 +20,14 @@ func (m *ContractsInteractor) APIConsumerRequest(jobID string, url string, times
 	log.Printf("job id hex: %s", hexutil.Encode([]byte(jobID)))
 	copy(jobIDToSend[:], jobID)
 
-	log.Printf("creating tx to mock oracle: %s", m.DeployedData.MockOracleAddress.Hex())
+	log.Printf("calling APIConsumer.createRequestTo with oracle addr: %s", m.DeployedData.MockOracleAddress.Hex())
 	res, err := instance.CreateRequestTo(
 		transactor,
 		m.DeployedData.MockOracleAddress,
 		jobIDToSend,
 		big.NewInt(10000000000000000),
 		url,
-		"",
+		path,
 		big.NewInt(int64(times)),
 	)
 	if err != nil {

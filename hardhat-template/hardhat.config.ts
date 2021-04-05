@@ -37,6 +37,7 @@ const config = {
   defaultNetwork: 'localhost',
   networks: {
     hardhat: {
+      chainId: 1337,
       loggingEnabled: true,
       mining: {
         // auto: false,

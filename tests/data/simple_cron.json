@@ -1,0 +1,45 @@
+{
+  "initiators": [
+    {
+      "type": "cron",
+      "params": {
+        "schedule": "CRON_TZ=UTC */1 * * * *"
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "type": "httpget",
+      "confirmations": 0,
+      "params": {
+        "get": "https://bitstamp.net/api/ticker/"
+      }
+    },
+    {
+      "type": "jsonparse",
+      "confirmations": null,
+      "params": {
+        "path": [
+          "last"
+        ]
+      }
+    },
+    {
+      "type": "multiply",
+      "confirmations": null,
+      "params": {
+        "times": 100
+      }
+    },
+    {
+      "type": "ethuint256",
+      "confirmations": null,
+      "params": {}
+    },
+    {
+      "type": "ethtx",
+      "confirmations": null,
+      "params": {}
+    }
+  ]
+}
