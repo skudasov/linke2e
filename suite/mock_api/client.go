@@ -43,3 +43,11 @@ func (m *Client) SetStubResponse(body map[string]interface{}) {
 		log.Fatal(err)
 	}
 }
+
+func (m *Client) Reset() {
+	_, err := m.Client.R().
+		Post("/reset")
+	if err != nil {
+		log.Fatal(err)
+	}
+}

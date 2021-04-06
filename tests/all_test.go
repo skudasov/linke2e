@@ -35,20 +35,22 @@ func TestJobInteractions(t *testing.T) {
 		stubFile          string
 		contractInitiator bool
 	}{
-		{"simple web", "data/simple_web.json", "data/simple_web_stub.json", false},
+		// {"simple web", "data/simple_web.json", "data/simple_web_stub.json", false},
 		{"simple get", "data/simple_get.json", "data/simple_get_stub.json", true},
 	}
 
 	for _, tt := range jobTests {
 		t.Run(tt.name, func(t *testing.T) {
+			defer h.ResetMock()
 			stubMap := h.CreateStub(tt.stubFile)
 			specMap := h.CreateSpec(tt.specFile)
 			if !tt.contractInitiator {
 				h.NodeClient.TriggerJobRun(specMap["jobID"].(string))
 			} else {
-				h.Contracts.APIConsumerRequest(specMap["jobID"].(string), "http://host.docker.internal:9092/api_stub", "data", 5)
+				h.Contracts.APIConsumerRequest(specMap["jobID"].(string), "http://host.docker.internal:9092/api_stub", "data", 1)
 			}
-			h.AwaitExpected(t, specMap, stubMap)
+			h.AwaitAPICall(t, stubMap)
+			h.AwaitDataOnChain(t, specMap, stubMap)
 		})
 	}
 }

@@ -27,6 +27,12 @@ func Start() {
 	app := fiber.New()
 	app.Use(fiblog.New())
 
+	app.Post("/reset", func(c *fiber.Ctx) error {
+		STUB = make(map[string]interface{})
+		CALLS = make(map[string]int)
+		return c.SendStatus(fiber.StatusOK)
+	})
+
 	app.Post("/set_stub_response", func(c *fiber.Ctx) error {
 		var stubBody StubBody
 		if err := c.BodyParser(&stubBody); err != nil {

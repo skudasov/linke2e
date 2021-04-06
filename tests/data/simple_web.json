@@ -26,7 +26,8 @@
     {
       "type": "ethtx",
       "params": {
-        "address": "0xBc4ea0504f43a7B743Fd8FF7195f3dCDf8cFEdf5"
+        "address": "0xec63d60c5bd29fb8eab666be288761984b010857",
+        "functionSelector": "0x4357855e"
       }
     }
   ]

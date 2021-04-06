@@ -5,7 +5,7 @@
  *     - Kovan LINK faucet: https://kovan.chain.link/
  */
 
-pragma solidity ^0.6.6;
+pragma solidity 0.6.6;
 
 //import "https://raw.githubusercontent.com/smartcontractkit/chainlink/develop/evm-contracts/src/v0.6/ChainlinkClient.sol";
 import "./node_modules/@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
@@ -21,6 +21,7 @@ import "./node_modules/@openzeppelin/contracts/access/Ownable.sol";
  */
 contract APIConsumer is ChainlinkClient, Ownable {
   uint256 public data;
+  bytes4 public selector;
 
   /**
    * @notice Deploy the contract with a specified address for the LINK
@@ -67,6 +68,7 @@ contract APIConsumer is ChainlinkClient, Ownable {
     onlyOwner
     returns (bytes32 requestId)
   {
+    selector = this.fulfill.selector;
     Chainlink.Request memory req = buildChainlinkRequest(_jobId, address(this), this.fulfill.selector);
     req.add("url", _url);
     req.add("path", _path);

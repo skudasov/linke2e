@@ -3,7 +3,7 @@
     {
       "type": "runlog",
       "params": {
-        "address": "0x0000000000000000000000000000000000000000"
+        "address": "0xeC63d60C5Bd29fB8EaB666be288761984B010857"
       }
     }
   ],
@@ -28,6 +28,7 @@
     },
     {
       "type": "ethtx",
+      "confirmations": 1,
       "params": {}
     }
   ]

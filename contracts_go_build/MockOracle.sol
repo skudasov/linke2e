@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.6;
+pragma solidity 0.6.6;
 
 import "./node_modules/@chainlink/contracts/src/v0.6/LinkTokenReceiver.sol";
 import "./node_modules/@chainlink/contracts/src/v0.6/interfaces/ChainlinkRequestInterface.sol";
@@ -15,7 +15,7 @@ contract MockOracle is ChainlinkRequestInterface, LinkTokenReceiver {
 
   uint256 constant public EXPIRY_TIME = 20 minutes;
   uint256 constant private MINIMUM_CONSUMER_GAS_LIMIT = 400000;
-  
+
   struct Request {
       address callbackAddr;
       bytes4 callbackFunctionId;

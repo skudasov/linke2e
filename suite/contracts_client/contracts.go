@@ -158,11 +158,11 @@ func (m *ContractsInteractor) DeployContracts() {
 }
 
 // FundConsumerWithLink fund consumer contract with link, used only with geth deployment
-func (m *ContractsInteractor) FundConsumerWithLink() {
+func (m *ContractsInteractor) FundConsumerWithLink(link int64) {
 	log.Printf("funding consumer with link")
 	k := m.RootAccountFromFile()
 	tx := m.DeployerTransactor(k.Address, k.PrivateKey)
-	_, err := m.DeployedData.MockLink.Transfer(tx, m.DeployedData.APIConsumerAddress, big.NewInt(2000000000000000000))
+	_, err := m.DeployedData.MockLink.Transfer(tx, m.DeployedData.APIConsumerAddress, big.NewInt(link))
 	if err != nil {
 		log.Fatal(err)
 	}

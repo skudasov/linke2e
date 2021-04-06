@@ -1,6 +1,29 @@
 version: "2.1"
 
 services:
+#  blockscout:
+#    build:
+#      context: .
+#      dockerfile: ./blockscout/Dockerfile
+#    restart: always
+#    environment:
+#      - DATABASE_URL=ecto://postgres:secret@pg:5432/explorer?ssl=false
+#      - ETHEREUM_JSONRPC_HTTP_URL=http://ethereum:8545
+#      - ETHEREUM_JSONRPC_WS_URL=ws://ethereum:8546
+#    ports:
+#      - "4000:4000"
+#    links:
+#      - ethereum
+#    depends_on:
+#      - pg
+
+  explorer:
+    image: alethio/ethereum-lite-explorer:latest
+    environment:
+      - APP_NODE_URL=http://localhost:8544
+    ports:
+    - "8080:80"
+
   ethereum:
     image: ethereum/client-go:v1.10.1
     restart: always
@@ -22,6 +45,7 @@ services:
     entrypoint: sh ./root/init.sh
     command: |
       --dev
+      --dev.period 3
       --password /root/password.txt
       --datadir /root/.ethereum/devchain
       --unlock 0x01bca4c976169d4d8cceb227c08bab9e3775d7f5
@@ -40,6 +64,8 @@ services:
       --ws.port=8545
       --allow-insecure-unlock
       --rpc.allow-unprotected-txs
+      --http.corsdomain "*"
+      --vmdebug
 
   pg:
     image: postgres:13.0

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.6;
+pragma solidity 0.6.6;
 
 import "./node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
 
 abstract contract ERC677Receiver {
     function onTokenTransfer(address _sender, uint _value, bytes memory _data) public virtual;

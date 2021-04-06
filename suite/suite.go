@@ -43,7 +43,7 @@ func (m *ChainLinkSuite) Prepare() {
 	if m.Contracts.Cfg.NetworkType == contracts_client.GethNetwork {
 		m.Contracts.ShowAddresses(10)
 		m.Contracts.DeployContracts()
-		m.Contracts.FundConsumerWithLink()
+		m.Contracts.FundConsumerWithLink(2000000000000000000)
 	} else {
 		m.Contracts.HardhatDeployerData()
 	}
@@ -65,8 +65,8 @@ func (m *ChainLinkSuite) CreateStub(stubPath string) map[string]interface{} {
 	return fileMap
 }
 
-// AwaitExpected awaits common expectations for interaction
-func (m *ChainLinkSuite) AwaitExpected(t *testing.T, jobMap map[string]interface{}, stubMap map[string]interface{}) {
+// AwaitAPICall awaits that API called N times
+func (m *ChainLinkSuite) AwaitAPICall(t *testing.T, stubMap map[string]interface{}) {
 	if err := retry.Do(func() error {
 		if int(stubMap["times"].(float64)) != m.MockClient.CheckCalledTimes("api_stub") {
 			log.Printf("checking stub was called")
@@ -78,7 +78,10 @@ func (m *ChainLinkSuite) AwaitExpected(t *testing.T, jobMap map[string]interface
 		log.Printf("stub expectations failed")
 		t.Fail()
 	}
+}
 
+// AwaitDataOnChain awaits data on chain delivered
+func (m *ChainLinkSuite) AwaitDataOnChain(t *testing.T, jobMap map[string]interface{}, stubMap map[string]interface{}) {
 	data := stubMap["response"].(map[string]interface{})["data"].(float64)
 	if err := retry.Do(func() error {
 		d := m.Contracts.CheckAPIConsumerData()
@@ -93,6 +96,7 @@ func (m *ChainLinkSuite) AwaitExpected(t *testing.T, jobMap map[string]interface
 	}
 }
 
+// CreateJobSpec creates job spec from map
 func (m *ChainLinkSuite) CreateJobSpec(body map[string]interface{}) string {
 	var respBody node_client.CreateJobBodyResponse
 	res, err := m.NodeClient.Client.R().
@@ -105,4 +109,9 @@ func (m *ChainLinkSuite) CreateJobSpec(body map[string]interface{}) string {
 	log.Printf("job response: %s", res)
 	log.Printf("job %s created", respBody.Data.ID)
 	return respBody.Data.ID
+}
+
+// ResetMock resets mock response and call times
+func (m *ChainLinkSuite) ResetMock() {
+	m.MockClient.Reset()
 }
