@@ -70,7 +70,7 @@ contract APIConsumer is ChainlinkClient, Ownable {
   {
     selector = this.fulfill.selector;
     Chainlink.Request memory req = buildChainlinkRequest(_jobId, address(this), this.fulfill.selector);
-    req.add("url", _url);
+    req.add("get", _url);
     req.add("path", _path);
     req.addInt("times", _times);
     requestId = sendChainlinkRequestTo(_oracle, req, _payment);

@@ -222,17 +222,10 @@ func (m *ContractsInteractor) APIConsumerRequest(jobID string, payment int64, ur
 }
 
 func (m *ContractsInteractor) CheckAPIConsumerData() int64 {
-	m.DebugVars()
+	m.DumpVars()
 	data, err := m.DeployedData.APIConsumer.Data(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return data.Int64()
-}
-
-func (m *ContractsInteractor) DebugVars() {
-	cbAddr, _ := m.DeployedData.MockOracle.MemoCallbackAddr(nil)
-	cbFn, _ := m.DeployedData.MockOracle.MemoCallbackFn(nil)
-	selector, _ := m.DeployedData.APIConsumer.Selector(nil)
-	log.Printf("cb addr: %s, cb fn: %s, selector provided: %s", cbAddr.Hex(), common.Bytes2Hex(cbFn[:]), common.Bytes2Hex(selector[:]))
 }

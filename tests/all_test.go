@@ -13,7 +13,7 @@ import (
 func TestJobInteractions(t *testing.T) {
 	h := suite.NewChainLinkSuite(&suite.Config{
 		MockClientConfig: &mock_api.Config{
-			Url: "http://0.0.0.0:9092",
+			Url: "http://localhost:9092",
 		},
 		NodeClientConfig: &node_client.Config{
 			Url:      "http://localhost:6688",
@@ -48,6 +48,7 @@ func TestJobInteractions(t *testing.T) {
 			defer h.ResetMock()
 			stubMap := h.CreateStub(tt.stubFile)
 			specMap := h.CreateSpec(tt.specFile)
+
 			if specMap.Get("initiators.0.type").String() == "runlog" {
 				h.Contracts.APIConsumerRequest(
 					specMap.Get("jobID").String(),

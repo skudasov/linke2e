@@ -14,26 +14,25 @@ import (
 	"github.com/skudasov/linke2e/suite/node_client"
 )
 
-func init() {
-	retry.DefaultAttempts = 10
-	retry.DefaultDelayType = func(n uint, err error, config *retry.Config) time.Duration {
-		return 1 * time.Second
-	}
-}
-
 type ChainLinkSuite struct {
-	Contracts  *contracts_client.ContractsInteractor
-	NodeClient *node_client.NodeClient
-	MockClient *mock_api.Client
+	Contracts    *contracts_client.ContractsInteractor
+	NodeClient   *node_client.NodeClient
+	MockClient   *mock_api.Client
+	AssertConfig *AssertConfig
 }
 
 func NewChainLinkSuite(cfg *Config) *ChainLinkSuite {
 	s := &ChainLinkSuite{
-		Contracts:  contracts_client.NewContracts(cfg.ContractsConfig),
-		NodeClient: node_client.NewNodeClient(cfg.NodeClientConfig),
-		MockClient: mock_api.NewClient(cfg.MockClientConfig),
+		Contracts:    contracts_client.NewContracts(cfg.ContractsConfig),
+		NodeClient:   node_client.NewNodeClient(cfg.NodeClientConfig),
+		MockClient:   mock_api.NewClient(cfg.MockClientConfig),
+		AssertConfig: cfg.AssertConfig,
 	}
 	s.Prepare()
+	retry.DefaultAttempts = cfg.AssertConfig.Attempts
+	retry.DefaultDelayType = func(n uint, err error, config *retry.Config) time.Duration {
+		return cfg.AssertConfig.Delay
+	}
 	return s
 }
 
