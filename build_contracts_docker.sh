@@ -1,7 +1,7 @@
 #!/bin/bash
 CONTRACTS_DIR=contracts_go_build
 ETHEREUM_DOCKER_TOOLS_CONTAINER=ethereum/client-go:alltools-latest
-DEFAULT_SOLC_CONTAINER=ethereum/solc:0.6.6
+DEFAULT_SOLC_CONTAINER=ethereum/solc:0.6.0
 
 echo "downloading modules with yarn"
 cd contracts_go_build && yarn install

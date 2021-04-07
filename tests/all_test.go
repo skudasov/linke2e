@@ -45,9 +45,15 @@ func TestJobInteractions(t *testing.T) {
 			stubMap := h.CreateStub(tt.stubFile)
 			specMap := h.CreateSpec(tt.specFile)
 			if !tt.contractInitiator {
-				h.NodeClient.TriggerJobRun(specMap["jobID"].(string))
+				h.NodeClient.TriggerJobRun(specMap.Get("jobID").String())
 			} else {
-				h.Contracts.APIConsumerRequest(specMap["jobID"].(string), "http://host.docker.internal:9092/api_stub", "data", 1)
+				h.Contracts.APIConsumerRequest(
+					specMap.Get("jobID").String(),
+					1e18,
+					"http://host.docker.internal:9092/api_stub",
+					"data",
+					1,
+				)
 			}
 			h.AwaitAPICall(t, stubMap)
 			h.AwaitDataOnChain(t, specMap, stubMap)

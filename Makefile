@@ -33,6 +33,10 @@ cover: go-acc
 start_geth:
 	cd deploy && docker-compose -f docker-compose-geth.yml up
 
+.PHONY: build_geth
+build_geth:
+	cd deploy && docker-compose -f docker-compose-geth.yml build
+
 .PHONY: stop_geth
 stop_geth:
 	cd deploy && docker-compose -f docker-compose-geth.yml down --remove-orphans

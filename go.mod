@@ -39,7 +39,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/status-im/keycard-go v0.0.0-20200402102358-957c09536969 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.7.4 // indirect
+	github.com/tidwall/gjson v1.7.4
 	github.com/tyler-smith/go-bip39 v1.0.2 // indirect
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/sys v0.0.0-20210326220804-49726bf1d181 // indirect

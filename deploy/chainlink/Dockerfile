@@ -1,4 +1,4 @@
-FROM smartcontract/chainlink:latest
+FROM smartcontract/chainlink:0.9.0
 
 ENV CHAINLINK_TLS_PORT 0
 ENV CHAINLINK_PORT 6688

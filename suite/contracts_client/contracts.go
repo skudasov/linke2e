@@ -196,7 +196,7 @@ func (m *ContractsInteractor) FundNodeWithEth(nodeAddr string) {
 	log.Printf("fund chainlink node tx hash: %s", signedTx.Hash().Hex())
 }
 
-func (m *ContractsInteractor) APIConsumerRequest(jobID string, url string, path string, times int) {
+func (m *ContractsInteractor) APIConsumerRequest(jobID string, payment int64, url string, path string, times int) {
 	var jobIDToSend [32]byte
 	copy(jobIDToSend[:], jobID)
 	log.Printf("job id hex: %s", hexutil.Encode([]byte(jobID)))
@@ -206,7 +206,7 @@ func (m *ContractsInteractor) APIConsumerRequest(jobID string, url string, path 
 		m.DeployerTransactor(m.DeployedData.RootAddress, m.DeployedData.RootPrivateKey),
 		m.DeployedData.MockOracleAddress,
 		jobIDToSend,
-		big.NewInt(10000000000000000),
+		big.NewInt(payment),
 		url,
 		path,
 		big.NewInt(int64(times)),
@@ -222,9 +222,17 @@ func (m *ContractsInteractor) APIConsumerRequest(jobID string, url string, path 
 }
 
 func (m *ContractsInteractor) CheckAPIConsumerData() int64 {
+	m.DebugVars()
 	data, err := m.DeployedData.APIConsumer.Data(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return data.Int64()
+}
+
+func (m *ContractsInteractor) DebugVars() {
+	cbAddr, _ := m.DeployedData.MockOracle.MemoCallbackAddr(nil)
+	cbFn, _ := m.DeployedData.MockOracle.MemoCallbackFn(nil)
+	selector, _ := m.DeployedData.APIConsumer.Selector(nil)
+	log.Printf("cb addr: %s, cb fn: %s, selector provided: %s", cbAddr.Hex(), common.Bytes2Hex(cbFn[:]), common.Bytes2Hex(selector[:]))
 }

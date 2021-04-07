@@ -76,8 +76,8 @@ Use default Docker Engine config, without additional dns or at least include def
 ```
 
 ## TODO
+- [x] Use jsonpath library (embedded paths) to bring more data in .json files, make tests more data-driven
 - [ ] Debug EthTx adapter
 - [ ] Add more debugging for contract logs
 - [ ] Improve logging with custom test context with convenient logger
-- [ ] Use jsonpath library (embedded paths) to bring more data in .json files, make tests more data-driven
 - [ ] Debug hardhat type problems on RPC requests, add deployment with forks or try to implement forking in go

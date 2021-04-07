@@ -45,7 +45,6 @@ services:
     entrypoint: sh ./root/init.sh
     command: |
       --dev
-      --dev.period 3
       --password /root/password.txt
       --datadir /root/.ethereum/devchain
       --unlock 0x01bca4c976169d4d8cceb227c08bab9e3775d7f5

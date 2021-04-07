@@ -7,6 +7,7 @@ import (
 
 	"github.com/avast/retry-go"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 
 	"github.com/skudasov/linke2e/suite/contracts_client"
 	"github.com/skudasov/linke2e/suite/mock_api"
@@ -43,7 +44,7 @@ func (m *ChainLinkSuite) Prepare() {
 	if m.Contracts.Cfg.NetworkType == contracts_client.GethNetwork {
 		m.Contracts.ShowAddresses(10)
 		m.Contracts.DeployContracts()
-		m.Contracts.FundConsumerWithLink(2000000000000000000)
+		m.Contracts.FundConsumerWithLink(2e18)
 	} else {
 		m.Contracts.HardhatDeployerData()
 	}
@@ -51,24 +52,26 @@ func (m *ChainLinkSuite) Prepare() {
 }
 
 // CreateSpec creates job from spec file
-func (m *ChainLinkSuite) CreateSpec(jobPath string) map[string]interface{} {
-	fileMap := JSONFileToMap(jobPath)
-	jobID := m.CreateJobSpec(fileMap)
-	fileMap["jobID"] = jobID
-	return fileMap
+func (m *ChainLinkSuite) CreateSpec(jobPath string) gjson.Result {
+	g := GJSONFromFile(jobPath)
+	rawMap := GJSONToMap(g)
+	jobID := m.CreateJobSpec(rawMap)
+	rawMap["jobID"] = jobID
+	return GJSONFromMap(rawMap)
 }
 
 // CreateStub sets stub response from file
-func (m *ChainLinkSuite) CreateStub(stubPath string) map[string]interface{} {
-	fileMap := JSONFileToMap(stubPath)
-	m.MockClient.SetStubResponse(fileMap["response"].(map[string]interface{}))
-	return fileMap
+func (m *ChainLinkSuite) CreateStub(stubPath string) gjson.Result {
+	g := GJSONFromFile(stubPath)
+	rawMap := GJSONToMap(g)
+	m.MockClient.SetStubResponse(rawMap["response"].(map[string]interface{}))
+	return GJSONFromMap(rawMap)
 }
 
 // AwaitAPICall awaits that API called N times
-func (m *ChainLinkSuite) AwaitAPICall(t *testing.T, stubMap map[string]interface{}) {
+func (m *ChainLinkSuite) AwaitAPICall(t *testing.T, stubMap gjson.Result) {
 	if err := retry.Do(func() error {
-		if int(stubMap["times"].(float64)) != m.MockClient.CheckCalledTimes("api_stub") {
+		if int(stubMap.Get("times").Int()) != m.MockClient.CheckCalledTimes("api_stub") {
 			log.Printf("checking stub was called")
 			return errors.New("retrying awaiting for api_stub calls")
 		}
@@ -81,8 +84,8 @@ func (m *ChainLinkSuite) AwaitAPICall(t *testing.T, stubMap map[string]interface
 }
 
 // AwaitDataOnChain awaits data on chain delivered
-func (m *ChainLinkSuite) AwaitDataOnChain(t *testing.T, jobMap map[string]interface{}, stubMap map[string]interface{}) {
-	data := stubMap["response"].(map[string]interface{})["data"].(float64)
+func (m *ChainLinkSuite) AwaitDataOnChain(t *testing.T, jobMap gjson.Result, stubMap gjson.Result) {
+	data := stubMap.Get("response.data").Float()
 	if err := retry.Do(func() error {
 		d := m.Contracts.CheckAPIConsumerData()
 		if d != int64(data) {
