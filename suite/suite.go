@@ -116,5 +116,6 @@ func (m *ChainLinkSuite) CreateJobSpec(body map[string]interface{}) string {
 
 // ResetMock resets mock response and call times
 func (m *ChainLinkSuite) ResetMock() {
+	log.Printf("resetting mock")
 	m.MockClient.Reset()
 }

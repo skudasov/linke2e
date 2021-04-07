@@ -2,6 +2,7 @@ package tests
 
 import (
 	"testing"
+	"time"
 
 	"github.com/skudasov/linke2e/suite"
 	"github.com/skudasov/linke2e/suite/contracts_client"
@@ -27,16 +28,19 @@ func TestJobInteractions(t *testing.T) {
 			GethRootPassword:     "123456",
 			GethRootAccountFile:  "../deploy/ethconfig/keystore/UTC--2021-04-01T13-44-29.143912000Z--01bca4c976169d4d8cceb227c08bab9e3775d7f5",
 		},
+		AssertConfig: &suite.AssertConfig{
+			Attempts: 10,
+			Delay:    1 * time.Second,
+		},
 	})
 
 	var jobTests = []struct {
-		name              string
-		specFile          string
-		stubFile          string
-		contractInitiator bool
+		name     string
+		specFile string
+		stubFile string
 	}{
-		// {"simple web", "data/simple_web.json", "data/simple_web_stub.json", false},
-		{"simple get", "data/simple_get.json", "data/simple_get_stub.json", true},
+		{"simple web", "data/simple_web.json", "data/simple_web_stub.json"},
+		{"simple get", "data/simple_get.json", "data/simple_get_stub.json"},
 	}
 
 	for _, tt := range jobTests {
@@ -44,9 +48,7 @@ func TestJobInteractions(t *testing.T) {
 			defer h.ResetMock()
 			stubMap := h.CreateStub(tt.stubFile)
 			specMap := h.CreateSpec(tt.specFile)
-			if !tt.contractInitiator {
-				h.NodeClient.TriggerJobRun(specMap.Get("jobID").String())
-			} else {
+			if specMap.Get("initiators.0.type").String() == "runlog" {
 				h.Contracts.APIConsumerRequest(
 					specMap.Get("jobID").String(),
 					1e18,
@@ -54,6 +56,8 @@ func TestJobInteractions(t *testing.T) {
 					"data",
 					1,
 				)
+			} else {
+				h.NodeClient.TriggerJobRun(specMap.Get("jobID").String())
 			}
 			h.AwaitAPICall(t, stubMap)
 			h.AwaitDataOnChain(t, specMap, stubMap)
