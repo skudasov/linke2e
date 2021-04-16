@@ -221,8 +221,17 @@ func (m *ContractsInteractor) APIConsumerRequest(jobID string, payment int64, ur
 	log.Printf("receipt: %s", jsonPayload)
 }
 
+func (m *ContractsInteractor) SetFulfullmentPermission(nodeAddr string) {
+	if _, err := m.DeployedData.MockOracle.SetFulfillmentPermission(
+		m.DeployerTransactor(m.DeployedData.RootAddress, m.DeployedData.RootPrivateKey),
+		common.HexToAddress(nodeAddr),
+		true,
+	); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func (m *ContractsInteractor) CheckAPIConsumerData() int64 {
-	m.DumpVars()
 	data, err := m.DeployedData.APIConsumer.Data(nil)
 	if err != nil {
 		log.Fatal(err)

@@ -48,6 +48,7 @@ func (m *ChainLinkSuite) Prepare() {
 		m.Contracts.HardhatDeployerData()
 	}
 	m.Contracts.FundNodeWithEth(m.NodeClient.GetNodeEthAddr())
+	m.Contracts.SetFulfullmentPermission(m.NodeClient.GetNodeEthAddr())
 }
 
 // CreateSpec creates job from spec file

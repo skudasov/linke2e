@@ -61,6 +61,8 @@ services:
       --ws.origins "*"
       --ws.addr 0.0.0.0
       --ws.port=8545
+      --graphql
+      --graphql.corsdomain "*"
       --allow-insecure-unlock
       --rpc.allow-unprotected-txs
       --http.corsdomain "*"

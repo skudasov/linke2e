@@ -39,7 +39,7 @@ func TestJobInteractions(t *testing.T) {
 		specFile string
 		stubFile string
 	}{
-		{"simple web", "data/simple_web.json", "data/simple_web_stub.json"},
+		// {"simple web", "data/simple_web.json", "data/simple_web_stub.json"},
 		{"simple get", "data/simple_get.json", "data/simple_get_stub.json"},
 	}
 

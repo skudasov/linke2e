@@ -26,8 +26,8 @@
     {
       "type": "ethtx",
       "params": {
-        "address": "0xec63d60c5bd29fb8eab666be288761984b010857",
-        "functionSelector": "0x4357855e"
+        "address": "0xeC63d60C5Bd29fB8EaB666be288761984B010857",
+        "functionSelector": "fulfillOracleRequest(bytes32,bytes32)"
       }
     }
   ]
