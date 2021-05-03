@@ -84,14 +84,15 @@ func (m *ChainLinkSuite) AwaitAPICall(t *testing.T, stubMap gjson.Result) {
 }
 
 // AwaitDataOnChain awaits data on chain delivered
-func (m *ChainLinkSuite) AwaitDataOnChain(t *testing.T, jobMap gjson.Result, stubMap gjson.Result) {
-	data := stubMap.Get("response.data").Float()
+func (m *ChainLinkSuite) AwaitDataOnChain(t *testing.T, _ gjson.Result, stubMap gjson.Result) {
+	expectedData := stubMap.Get("response.data").Float()
 	if err := retry.Do(func() error {
-		d := m.Contracts.CheckAPIConsumerData()
-		if d != int64(data) {
-			log.Printf("awaiting for data: %d", d)
+		actualData := m.Contracts.CheckAPIConsumerData()
+		log.Printf("expecting data: %d, have: %d", int64(expectedData), actualData)
+		if actualData != int64(expectedData) {
 			return errors.New("retrying awaiting for data in contract")
 		}
+		log.Printf("on chain data expectation pass")
 		return nil
 	}); err != nil {
 		log.Printf("on-chain data expectations failed")
