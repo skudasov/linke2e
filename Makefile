@@ -41,14 +41,6 @@ build_geth:
 stop_geth:
 	cd deploy && docker-compose -f docker-compose-geth.yml down --remove-orphans
 
-.PHONY: start_geth
-start_hardhat:
-	cd deploy && docker-compose -f docker-compose-hardhat.yml up
-
-.PHONY: stop_geth
-stop_hardhat:
-	cd deploy && docker-compose -f docker-compose-hardhat.yml down --remove-orphans
-
 .PHONY: test_interactions
 test_interactions:
 	go test -v --count=1 tests/all_test.go

@@ -21,7 +21,6 @@ func TestJobInteractions(t *testing.T) {
 			Password: "twochains",
 		},
 		ContractsConfig: &contracts_client.Config{
-			NetworkType:          contracts_client.GethNetwork,
 			RPCUrl:               "ws://localhost:8545",
 			NetworkID:            "1337",
 			HardhatPrivateKeyHex: "88b1ae324c09b52d8710bbe4c4f0b63f591e5eea508176a97d7f76b154f979b1",
@@ -33,6 +32,7 @@ func TestJobInteractions(t *testing.T) {
 			Delay:    1 * time.Second,
 		},
 	})
+	h.Prepare(t)
 
 	var jobTests = []struct {
 		name     string
@@ -45,12 +45,13 @@ func TestJobInteractions(t *testing.T) {
 
 	for _, tt := range jobTests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer h.ResetMock()
-			stubMap := h.CreateStub(tt.stubFile)
-			specMap := h.CreateSpec(tt.specFile)
+			defer h.ResetMock(t)
+			stubMap := h.CreateStub(t, tt.stubFile)
+			specMap := h.CreateSpec(t, tt.specFile)
 
 			if specMap.Get("initiators.0.type").String() == "runlog" {
 				h.Contracts.APIConsumerRequest(
+					t,
 					specMap.Get("jobID").String(),
 					1e18,
 					"http://host.docker.internal:9092/api_stub",
@@ -58,7 +59,7 @@ func TestJobInteractions(t *testing.T) {
 					1,
 				)
 			} else {
-				h.NodeClient.TriggerJobRun(specMap.Get("jobID").String())
+				h.NodeClient.TriggerJobRun(t, specMap.Get("jobID").String())
 			}
 			h.AwaitAPICall(t, stubMap)
 			h.AwaitDataOnChain(t, specMap, stubMap)

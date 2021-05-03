@@ -2,9 +2,9 @@ package node_client
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/go-resty/resty/v2"
-	log "github.com/sirupsen/logrus"
 )
 
 type NodeClient struct {
@@ -24,38 +24,38 @@ func NewNodeClient(cfg *Config) *NodeClient {
 	}
 }
 
-func (m *NodeClient) Authorize() {
+func (m *NodeClient) Authorize(t *testing.T) {
 	s := &Session{Email: m.Cfg.Login, Password: m.Cfg.Password}
 	res, err := m.Client.R().
 		SetBody(s).
 		Post("/sessions")
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
-	log.Printf("session created: %s", res)
+	t.Logf("session created: %s", res)
 }
 
-func (m *NodeClient) GetNodeEthAddr() string {
+func (m *NodeClient) GetNodeEthAddr(t *testing.T) string {
 	var respBody GetBalancesBodyResponse
 	res, err := m.Client.R().
 		SetResult(&respBody).
 		Get("/v2/user/balances")
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	ethAddr := respBody.Data[0].ID
-	log.Printf("node balances response: %s", res)
-	log.Printf("node eth id: %s", ethAddr)
+	t.Logf("node balances response: %s", res)
+	t.Logf("node eth id: %s", ethAddr)
 	return ethAddr
 }
 
-func (m *NodeClient) TriggerJobRun(jobID string) {
+func (m *NodeClient) TriggerJobRun(t *testing.T, jobID string) {
 	var respBody map[string]interface{}
 	res, err := m.Client.R().
 		SetResult(&respBody).
 		Post(fmt.Sprintf("/v2/specs/%s/runs", jobID))
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
-	log.Printf("trigger response for job: %s: %v", jobID, res)
+	t.Logf("trigger response for job: %s: %v", jobID, res)
 }

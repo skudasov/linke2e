@@ -1,7 +1,6 @@
 package suite
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -28,7 +27,6 @@ func NewChainLinkSuite(cfg *Config) *ChainLinkSuite {
 		MockClient:   mock_api.NewClient(cfg.MockClientConfig),
 		AssertConfig: cfg.AssertConfig,
 	}
-	s.Prepare()
 	retry.DefaultAttempts = cfg.AssertConfig.Attempts
 	retry.DefaultDelayType = func(n uint, err error, config *retry.Config) time.Duration {
 		return cfg.AssertConfig.Delay
@@ -37,49 +35,44 @@ func NewChainLinkSuite(cfg *Config) *ChainLinkSuite {
 }
 
 // Prepare sets all required conditions, fund Chainlink node with eth/link, authorize in node API
-func (m *ChainLinkSuite) Prepare() {
-	m.NodeClient.Authorize()
+func (m *ChainLinkSuite) Prepare(t *testing.T) {
 	go mock_api.Start()
-	if m.Contracts.Cfg.NetworkType == contracts_client.GethNetwork {
-		m.Contracts.ShowAddresses(10)
-		m.Contracts.DeployContracts()
-		m.Contracts.FundConsumerWithLink(2e18)
-	} else {
-		m.Contracts.HardhatDeployerData()
-	}
-	m.Contracts.FundNodeWithEth(m.NodeClient.GetNodeEthAddr())
-	m.Contracts.SetFulfullmentPermission(m.NodeClient.GetNodeEthAddr())
+	m.NodeClient.Authorize(t)
+	m.Contracts.ShowAddresses(t, 10)
+	m.Contracts.DeployContracts(t)
+	m.Contracts.FundConsumerWithLink(t, 2e18)
+	m.Contracts.FundNodeWithEth(t, m.NodeClient.GetNodeEthAddr(t))
+	m.Contracts.SetFulfullmentPermission(t, m.NodeClient.GetNodeEthAddr(t))
 }
 
 // CreateSpec creates job from spec file
-func (m *ChainLinkSuite) CreateSpec(jobPath string) gjson.Result {
+func (m *ChainLinkSuite) CreateSpec(t *testing.T, jobPath string) gjson.Result {
 	g := GJSONFromFile(jobPath)
 	rawMap := GJSONToMap(g)
-	jobID := m.CreateJobSpec(rawMap)
+	jobID := m.CreateJobSpec(t, rawMap)
 	rawMap["jobID"] = jobID
 	return GJSONFromMap(rawMap)
 }
 
 // CreateStub sets stub response from file
-func (m *ChainLinkSuite) CreateStub(stubPath string) gjson.Result {
+func (m *ChainLinkSuite) CreateStub(t *testing.T, stubPath string) gjson.Result {
 	g := GJSONFromFile(stubPath)
 	rawMap := GJSONToMap(g)
-	m.MockClient.SetStubResponse(rawMap["response"].(map[string]interface{}))
+	m.MockClient.SetStubResponse(t, rawMap["response"].(map[string]interface{}))
 	return GJSONFromMap(rawMap)
 }
 
 // AwaitAPICall awaits that API called N times
 func (m *ChainLinkSuite) AwaitAPICall(t *testing.T, stubMap gjson.Result) {
 	if err := retry.Do(func() error {
-		if int(stubMap.Get("times").Int()) != m.MockClient.CheckCalledTimes("api_stub") {
-			log.Printf("checking stub was called")
+		if int(stubMap.Get("times").Int()) != m.MockClient.CheckCalledTimes(t, "api_stub") {
+			t.Logf("checking stub was called")
 			return errors.New("retrying awaiting for api_stub calls")
 		}
-		log.Printf("stub called")
+		t.Logf("stub called")
 		return nil
 	}); err != nil {
-		log.Printf("stub expectations failed")
-		t.Fail()
+		t.Error(errors.Wrap(err, "stub expectations failed"))
 	}
 }
 
@@ -88,35 +81,34 @@ func (m *ChainLinkSuite) AwaitDataOnChain(t *testing.T, _ gjson.Result, stubMap 
 	expectedData := stubMap.Get("response.data").Float()
 	if err := retry.Do(func() error {
 		actualData := m.Contracts.CheckAPIConsumerData()
-		log.Printf("expecting data: %d, have: %d", int64(expectedData), actualData)
+		t.Logf("expecting data: %d, have: %d", int64(expectedData), actualData)
 		if actualData != int64(expectedData) {
 			return errors.New("retrying awaiting for data in contract")
 		}
-		log.Printf("on chain data expectation pass")
+		t.Logf("on chain data expectation pass")
 		return nil
 	}); err != nil {
-		log.Printf("on-chain data expectations failed")
-		t.Fail()
+		t.Error(errors.Wrap(err, "on-chain data expectations failed"))
 	}
 }
 
 // CreateJobSpec creates job spec from map
-func (m *ChainLinkSuite) CreateJobSpec(body map[string]interface{}) string {
+func (m *ChainLinkSuite) CreateJobSpec(t *testing.T, body map[string]interface{}) string {
 	var respBody node_client.CreateJobBodyResponse
 	res, err := m.NodeClient.Client.R().
 		SetBody(body).
 		SetResult(&respBody).
 		Post("/v2/specs")
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
-	log.Printf("job response: %s", res)
-	log.Printf("job %s created", respBody.Data.ID)
+	t.Logf("job response: %s", res)
+	t.Logf("job %s created", respBody.Data.ID)
 	return respBody.Data.ID
 }
 
 // ResetMock resets mock response and call times
-func (m *ChainLinkSuite) ResetMock() {
-	log.Printf("resetting mock")
-	m.MockClient.Reset()
+func (m *ChainLinkSuite) ResetMock(t *testing.T) {
+	t.Logf("resetting mock")
+	m.MockClient.Reset(t)
 }

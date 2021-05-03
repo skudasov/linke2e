@@ -37,9 +37,6 @@ Start envs (hardhat is WIP for now)
 ```
 make start_geth
 make stop_geth
-
-make start_hardhat
-make stop_hardhat
 ```
 
 Run golang lint
@@ -74,10 +71,3 @@ Use default Docker Engine config, without additional dns or at least include def
   "experimental": false
 }
 ```
-
-## TODO
-- [x] Use jsonpath library (embedded paths) to bring more data in .json files, make tests more data-driven
-- [ ] Debug EthTx adapter
-- [ ] Add more debugging for contract logs
-- [ ] Improve logging with custom test context with convenient logger
-- [ ] Debug hardhat type problems on RPC requests, add deployment with forks or try to implement forking in go

@@ -2,7 +2,7 @@ package mock_api
 
 import (
 	"fmt"
-	"log"
+	"testing"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -24,30 +24,30 @@ func NewClient(cfg *Config) *Client {
 	}
 }
 
-func (m *Client) CheckCalledTimes(path string) int {
+func (m *Client) CheckCalledTimes(t *testing.T, path string) int {
 	var resCalled CallResponse
 	_, err := m.Client.R().
 		SetResult(&resCalled).
 		Get(fmt.Sprintf("/check_call/%s", path))
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	return resCalled.Times
 }
 
-func (m *Client) SetStubResponse(body map[string]interface{}) {
+func (m *Client) SetStubResponse(t *testing.T, body map[string]interface{}) {
 	_, err := m.Client.R().
 		SetBody(body).
 		Post("/set_stub_response")
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 }
 
-func (m *Client) Reset() {
+func (m *Client) Reset(t *testing.T) {
 	_, err := m.Client.R().
 		Post("/reset")
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 }
